@@ -3,12 +3,8 @@
             [re-frame.core :as rf]
             [clojure.string :as str]))
 
-(enable-console-print!)
-
-(defn dispatch-timer-event []
-  (rf/dispatch [:timer (js/Date.)]))
-
-(defonce do-timer (js/setInterval dispatch-timer-event 1000))
+(defonce do-timer
+  (js/setInterval(fn [] (rf/dispatch [:timer (js/Date.)]) ) 1000))
 
 (rf/reg-event-db
  :initialize
@@ -36,28 +32,28 @@
    (:time-color db)))
 
 (defn clock []
-  )
+  [:div.example-clock
+   {:style {:color @(rf/subscribe [:time-color])}}
+   (-> @(rf/subscribe [:time])
+       .toTimeString
+       (str/split " ")
+       first)])
 
+(defn color-input []
+  [:div.color-input
+   "Time color: "
+   [:input {:type "text"
+            :value @(rf/subscribe [:time-color])
+            :on-change #(rf/dispatch [:change-color
+                                      (-> % .-target .-value)])}]])
 
-
-(defonce app-state (atom {:text "Hello worsld!"}))
-
-(defn hello-world []
+(defn ui []
   [:div
-   [:h3 "Ed123it this and watch it change!"]])
+   [:h1 "Hello world, it is now"]
+   [clock]
+   [color-input]])
 
-;; (reagent/render-component [hello-world]
-;;                           (. js/document (getElementById "app")))
-
-(defn ^:export run
-  []
+(defn ^:export run []
   (rf/dispatch-sync [:initialize])
-  (reagent/render-component [hello-world]
-                           (. js/document (getElementById "app"))))
-
-
-(defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
-)
+  (reagent/render [ui]
+                  (js/document.getElementById "app")))
